@@ -1,0 +1,25 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ./wait-for-postgres.sh db ./main
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      DB_PASSWORD: password
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: avito
+      POSTGRES_USER: avito
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+      - ./dumps:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432

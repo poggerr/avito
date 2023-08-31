@@ -1,0 +1,75 @@
+### Create Segment
+POST localhost:8080/api/segment/create
+Content-Type: application/json
+
+{
+  "segment": "AVITO_VOICE_MESSAGES"
+}
+
+### Create Segment 2
+POST localhost:8080/api/segment/create
+Content-Type: application/json
+
+{
+  "segment": "AVITO_PERFORMANCE_VAS"
+}
+
+### Create Segment 3
+POST localhost:8080/api/segment/create
+Content-Type: application/json
+
+{
+  "segment": "AVITO_DISCOUNT_30"
+}
+
+### Create Segment 4
+POST localhost:8080/api/segment/create
+Content-Type: application/json
+
+{
+  "segment": "AVITO_DISCOUNT_50"
+}
+
+### Create User Segment
+POST localhost:8080/api/user/segment
+Content-Type: application/json
+
+{
+  "add" : [
+    "AVITO_VOICE_MESSAGES",
+    "AVITO_PERFORMANCE_VAS"
+  ],
+  "delete" : [],
+  "user" : "2376e110-e40d-41d0-85ba-22db804c4f51"
+}
+
+### Delete User Segment
+POST localhost:8080/api/user/segment
+Content-Type: application/json
+
+{
+  "add" : [],
+  "delete" : ["AVITO_VOICE_MESSAGES"],
+  "user" : "2376e110-e40d-41d0-85ba-22db804c4f51"
+}
+
+
+### Delete Segment
+POST localhost:8080/api/segment/delete
+Content-Type: application/json
+
+{
+  "segment": "AVITO_DISCOUNT_30"
+}
+
+### Get Segments By User
+GET localhost:8080/api/segment/2376e110-e40d-41d0-85ba-22db804c4f51
+Content-Type: text/plain
+
+### Get CSV
+POST localhost:8080/api/segment/csv/2376e110-e40d-41d0-85ba-22db804c4f51
+Content-Type: application/json
+
+{
+  "period": "30-2023"
+}
