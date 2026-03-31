@@ -1,98 +1,81 @@
-# AvitoTest
+# Avito Segments Service
 
-Это сервис на языке Golang, хранящий пользователей и сегменты, в которых они состоят (создание, изменение, удаление сегментов, а также добавление и удаление пользователей в сегмент)
+Go-сервис для управления сегментами пользователей:
+- создание и удаление сегментов;
+- добавление/удаление сегментов у пользователя;
+- получение сегментов пользователя;
+- выгрузка истории операций в CSV за указанный период.
 
-## Требования
+## Технологии
 
-- Golang
+- Go
 - PostgreSQL
-- Docker
+- Chi Router
+- Docker / Docker Compose
 
-## Установка и настройка
+## Быстрый старт (Docker)
 
-1. Склонируйте репозиторий:
-   ```shell
-   git clone https://github.com/poggerr/avito.git
+```bash
+docker compose up --build
+```
 
-2. Установите зависимости:
-   ```shell
-   go mod download
+Сервис стартует на `http://localhost:8080`, PostgreSQL на `localhost:5432`.
 
-## Запуск сервиса
+## Локальный запуск (без Docker)
 
-1. Запустите базу данных PostgreSQL и сервис с помощью Docker:
-   ```shell
-   docker-compose up --build
+1. Поднять PostgreSQL и выполнить `dumps/dump.sql`.
+2. Задать переменные окружения:
 
-## Использование
+```bash
+export RUN_ADDRESS=":8080"
+export DATABASE_URI="host=localhost user=avito password=password dbname=avito sslmode=disable"
+```
 
-### REST API Запросы
+3. Запустить приложение:
 
-1. Создание сегмента:
-   ```json
-   POST localhost:8080/api/segment/create
-   Content-Type: application/json
+```bash
+make run
+```
 
-   {
-      "segment": "AVITO_VOICE_MESSAGES"
-   }
+## Основные API endpoint-ы
 
-2. Добавление пользователя в сегмент:
-   ```json
-   POST localhost:8080/api/user/segment
-   Content-Type: application/json
+- `POST /api/segment/create` - создать сегмент
+- `POST /api/segment/delete` - удалить сегмент
+- `POST /api/user/segment` - добавить/удалить сегменты пользователя
+- `GET /api/segment/{id}` - получить сегменты пользователя
+- `POST /api/segment/csv/{id}` - сформировать CSV-отчет
 
-   {
-     "add" : ["AVITO_VOICE_MESSAGES"],
-     "delete" : [],
-     "user" : "2376e110-e40d-41d0-85ba-22db804c4f51"
-   }
-   
-3. Удаление сегмента
-   ```json
-   POST localhost:8080/api/segment/delete
-   Content-Type: application/json
+Подробный demo-сценарий запросов: `req.http`.
 
-   {
-      "segment": "AVITO_VOICE_MESSAGES"
-   }
-   
-4. Удаление пользователя из сегмента
-   ```json
-   POST localhost:8080/api/user/segment
-   Content-Type: application/json
+## Примеры ответов об ошибках
 
-   {
-      "add" : [],
-      "delete" : ["AVITO_VOICE_MESSAGES"],
-      "user" : "2376e110-e40d-41d0-85ba-22db804c4f51"
-   }
+```json
+{
+  "error": "invalid JSON body"
+}
+```
 
-5. Вывод сегментов пользователя 
-   ```json
-   GET localhost:8080/api/segment/2376e110-e40d-41d0-85ba-22db804c4f51
-   Content-Type: text/plain
-   
-6. Создание отчета в формате CSV пользовательских сегментов
-   ```json
-   POST localhost:8080/api/segment/csv/2376e110-e40d-41d0-85ba-22db804c4f51
-   Content-Type: application/json
+```json
+{
+  "error": "segment already exists"
+}
+```
 
-   {
-      "period": "30-2023"
-   }
+## Тесты и команды
 
-## Тестирование
+```bash
+make test
+make test-unit
+make build
+```
 
-Вы можете запустить unit-тесты с помощью следующей команды:
-   ```shell
-   go test
-   ```
-## Вклад
+## Что важно для ревью кода
 
-Если вы нашли ошибку или хотите внести улучшения, пожалуйста, создайте issue или отправьте pull request.
+- Конфигурация читается из флагов и env (`internal/config`).
+- HTTP-слой и маршрутизация разделены (`internal/app`, `internal/routers`).
+- Логирование запросов добавлено через middleware (`internal/logger`).
 
 ## Лицензия
 
-Этот проект лицензирован под MIT License - подробности см. в файле [LICENSE](LICENSE).
+MIT, подробности в [LICENSE](LICENSE).
 

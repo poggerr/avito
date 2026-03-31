@@ -1,34 +1,29 @@
 package app
 
 import (
-	"encoding/json"
 	"github.com/poggerr/avito/internal/models"
-	"io"
 	"net/http"
+	"strings"
 )
 
 func (a *App) DeleteSegment(res http.ResponseWriter, req *http.Request) {
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	var segment models.Segment
-
-	err = json.Unmarshal(body, &segment)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if err := decodeJSONBody(req, &segment); err != nil {
+		a.sugaredLogger.Infow("invalid delete segment request", "error", err)
+		writeError(res, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	segment.Slug = strings.TrimSpace(segment.Slug)
+	if segment.Slug == "" {
+		writeError(res, http.StatusBadRequest, "segment is required")
 		return
 	}
 
-	err = a.strg.DeleteSegmentDB(&segment)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if err := a.strg.DeleteSegmentDB(&segment); err != nil {
+		a.sugaredLogger.Infow("failed to delete segment", "segment", segment.Slug, "error", err)
+		writeError(res, http.StatusBadRequest, "failed to delete segment")
+		return
 	}
 
-	res.WriteHeader(http.StatusOK)
+	writeJSON(res, http.StatusOK, map[string]string{"status": "deleted"})
 }

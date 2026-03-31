@@ -3,20 +3,23 @@ package logger
 import (
 	"go.uber.org/zap"
 	"net/http"
+	"sync"
 )
 
-var Log zap.SugaredLogger
+var (
+	Log  *zap.SugaredLogger
+	once sync.Once
+)
 
 func Initialize() *zap.SugaredLogger {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		// вызываем панику, если ошибка
-		panic(err)
-	}
-	defer logger.Sync()
-
-	Log = *logger.Sugar()
-	return &Log
+	once.Do(func() {
+		baseLogger, err := zap.NewDevelopment()
+		if err != nil {
+			panic(err)
+		}
+		Log = baseLogger.Sugar()
+	})
+	return Log
 }
 
 type (

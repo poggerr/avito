@@ -1,75 +1,77 @@
-### Create Segment
-POST localhost:8080/api/segment/create
+@base = http://localhost:8080
+@user = 2376e110-e40d-41d0-85ba-22db804c4f51
+
+### 1) Create segment AVITO_VOICE_MESSAGES (201)
+POST {{base}}/api/segment/create
 Content-Type: application/json
 
 {
   "segment": "AVITO_VOICE_MESSAGES"
 }
 
-### Create Segment 2
-POST localhost:8080/api/segment/create
+### 2) Create segment AVITO_PERFORMANCE_VAS (201)
+POST {{base}}/api/segment/create
 Content-Type: application/json
 
 {
   "segment": "AVITO_PERFORMANCE_VAS"
 }
 
-### Create Segment 3
-POST localhost:8080/api/segment/create
+### 3) Create segment AVITO_DISCOUNT_30 (201)
+POST {{base}}/api/segment/create
 Content-Type: application/json
 
 {
   "segment": "AVITO_DISCOUNT_30"
 }
 
-### Create Segment 4
-POST localhost:8080/api/segment/create
+### 4) Re-create existing segment (409)
+POST {{base}}/api/segment/create
 Content-Type: application/json
 
 {
-  "segment": "AVITO_DISCOUNT_50"
+  "segment": "AVITO_DISCOUNT_30"
 }
 
-### Create User Segment
-POST localhost:8080/api/user/segment
+### 5) Add segments to user (201)
+POST {{base}}/api/user/segment
 Content-Type: application/json
 
 {
-  "add" : [
+  "add": [
     "AVITO_VOICE_MESSAGES",
     "AVITO_PERFORMANCE_VAS"
   ],
-  "delete" : [],
-  "user" : "2376e110-e40d-41d0-85ba-22db804c4f51"
+  "delete": [],
+  "user": "{{user}}"
 }
 
-### Delete User Segment
-POST localhost:8080/api/user/segment
+### 6) Remove one segment from user (201)
+POST {{base}}/api/user/segment
 Content-Type: application/json
 
 {
-  "add" : [],
-  "delete" : ["AVITO_VOICE_MESSAGES"],
-  "user" : "2376e110-e40d-41d0-85ba-22db804c4f51"
+  "add": [],
+  "delete": ["AVITO_VOICE_MESSAGES"],
+  "user": "{{user}}"
 }
 
+### 7) Get user segments (200)
+GET {{base}}/api/segment/{{user}}
+Content-Type: application/json
 
-### Delete Segment
-POST localhost:8080/api/segment/delete
+### 8) Generate CSV report for period MM-YYYY (200)
+POST {{base}}/api/segment/csv/{{user}}
+Content-Type: application/json
+
+{
+  "period": "03-2026"
+}
+
+### 9) Delete existing segment (200)
+POST {{base}}/api/segment/delete
 Content-Type: application/json
 
 {
   "segment": "AVITO_DISCOUNT_30"
-}
-
-### Get Segments By User
-GET localhost:8080/api/segment/2376e110-e40d-41d0-85ba-22db804c4f51
-Content-Type: text/plain
-
-### Get CSV
-POST localhost:8080/api/segment/csv/2376e110-e40d-41d0-85ba-22db804c4f51
-Content-Type: application/json
-
-{
-  "period": "30-2023"
 }

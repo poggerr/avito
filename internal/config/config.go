@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v8"
+	"strings"
 )
 
 type Config struct {
@@ -24,6 +25,15 @@ func NewConf() *Config {
 
 	if err := env.Parse(&cfg); err != nil {
 		fmt.Printf("%+v\n", err)
+	}
+
+	cfg.ServAddr = strings.TrimSpace(cfg.ServAddr)
+	cfg.DB = strings.TrimSpace(cfg.DB)
+	if cfg.ServAddr == "" {
+		cfg.ServAddr = ":8080"
+	}
+	if cfg.DB == "" {
+		cfg.DB = "host=db user=avito password=password dbname=avito sslmode=disable"
 	}
 	return &cfg
 }

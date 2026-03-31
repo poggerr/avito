@@ -1,53 +1,38 @@
 package app
 
 import (
-	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/poggerr/avito/internal/csv_writer"
 	"github.com/poggerr/avito/internal/models"
-	"io"
 	"net/http"
 )
 
 func (a *App) CreateCSVSegment(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
-	newID := uuid.Must(uuid.Parse(id))
-	body, err := io.ReadAll(req.Body)
+	newID, err := uuid.Parse(id)
 	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusInternalServerError)
+		writeError(res, http.StatusBadRequest, "invalid user id")
 		return
 	}
 
 	var segment models.CSVRequest
-
-	err = json.Unmarshal(body, &segment)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if err = decodeJSONBody(req, &segment); err != nil {
+		a.sugaredLogger.Infow("invalid create csv request", "error", err)
+		writeError(res, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	if segment.Period == "" {
+		writeError(res, http.StatusBadRequest, "period is required")
 		return
 	}
 
 	filename, err := csv_writer.CreateCSVFile(&segment, &newID, a.strg)
 	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusInternalServerError)
+		a.sugaredLogger.Infow("failed to create csv file", "user", newID, "period", segment.Period, "error", err)
+		writeError(res, http.StatusInternalServerError, "failed to create csv file")
 		return
 	}
 
-	var link models.CSVLink
-
-	link.Link = filename
-
-	marshal, err := json.Marshal(link)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	res.Header().Set("content-type", "application/json ")
-	res.WriteHeader(http.StatusOK)
-	res.Write(marshal)
+	writeJSON(res, http.StatusOK, models.CSVLink{Link: filename})
 }

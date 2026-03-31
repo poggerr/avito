@@ -1,77 +1,65 @@
 package app
 
 import (
-	"encoding/json"
-	"github.com/poggerr/avito/internal/logger"
+	"github.com/google/uuid"
 	"github.com/poggerr/avito/internal/models"
-	"io"
 	"net/http"
+	"strings"
 )
 
 func (a *App) CreateSegment(res http.ResponseWriter, req *http.Request) {
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusInternalServerError)
+	var segment models.Segment
+	if err := decodeJSONBody(req, &segment); err != nil {
+		a.sugaredLogger.Infow("invalid create segment request", "error", err)
+		writeError(res, http.StatusBadRequest, "invalid JSON body")
 		return
 	}
-
-	var segment models.Segment
-
-	err = json.Unmarshal(body, &segment)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	segment.Slug = strings.TrimSpace(segment.Slug)
+	if segment.Slug == "" {
+		writeError(res, http.StatusBadRequest, "segment is required")
 		return
 	}
 
 	isDuplicate := a.strg.DuplicateSegment(&segment)
-	if isDuplicate != false {
-		res.WriteHeader(http.StatusConflict)
+	if isDuplicate {
+		writeError(res, http.StatusConflict, "segment already exists")
 		return
 	}
 
-	err = a.strg.CreateSegmentDB(&segment)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if err := a.strg.CreateSegmentDB(&segment); err != nil {
+		a.sugaredLogger.Infow("failed to create segment", "segment", segment.Slug, "error", err)
+		writeError(res, http.StatusBadRequest, "failed to create segment")
+		return
 	}
 
-	res.WriteHeader(http.StatusCreated)
+	writeJSON(res, http.StatusCreated, map[string]string{"status": "created"})
 }
 
 func (a *App) SegmentsToUser(res http.ResponseWriter, req *http.Request) {
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusInternalServerError)
+	var ans models.CRUDSegmentToUser
+	if err := decodeJSONBody(req, &ans); err != nil {
+		a.sugaredLogger.Infow("invalid update user segments request", "error", err)
+		writeError(res, http.StatusBadRequest, "invalid JSON body")
 		return
 	}
-
-	var ans models.CRUDSegmentToUser
-
-	err = json.Unmarshal(body, &ans)
-	if err != nil {
-		logger.Initialize().Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if ans.UserID == uuid.Nil {
+		writeError(res, http.StatusBadRequest, "user is required")
 		return
 	}
 
 	insertSlice := a.strg.CreateInsertSlice(&ans)
 
-	err = a.strg.AddSegmentToUser(&ans, insertSlice)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if err := a.strg.AddSegmentToUser(&ans, insertSlice); err != nil {
+		a.sugaredLogger.Infow("failed to add user segments", "user", ans.UserID, "error", err)
+		writeError(res, http.StatusBadRequest, "failed to add user segments")
 		return
 	}
 
-	err = a.strg.DeleteSegmentUser(&ans)
-	if err != nil {
-		a.sugaredLogger.Info(err)
-		res.WriteHeader(http.StatusBadRequest)
+	if err := a.strg.DeleteSegmentUser(&ans); err != nil {
+		a.sugaredLogger.Infow("failed to delete user segments", "user", ans.UserID, "error", err)
+		writeError(res, http.StatusBadRequest, "failed to delete user segments")
 		return
 	}
 
-	res.WriteHeader(http.StatusCreated)
+	writeJSON(res, http.StatusCreated, map[string]string{"status": "updated"})
 }
